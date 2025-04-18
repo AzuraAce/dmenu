@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ -z "${DMENU_PATH}" ] ; then
-    stest -flx $PATH
+    stest -flx $PATH | sort
 else
-    stest -flx $DMENU_PATH
+    stest -flx $DMENU_PATH | sort
 fi
