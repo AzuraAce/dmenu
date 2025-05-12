@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+CACHE_FILE="$HOME/.cache/dmenu-drun-cache"
+desktop_dirs=(
+  "$HOME/.local/share/applications"
+  "/usr/share/applications"
+)
+
+# Rebuild cache if missing or outdated
+rebuild_cache() {
+  mkdir -p "$(dirname "$CACHE_FILE")"
+  : > "$CACHE_FILE"  # empty the file
+
+  for dir in "${desktop_dirs[@]}"; do
+    [[ -d "$dir" ]] || continue
+    while IFS= read -r -d '' file; do
+      name=$(grep -E '^Name=' "$file" | head -n 1 | cut -d= -f2-)
+      generic_name=$(grep -E '^GenericName=' "$file" | head -n 1 | cut -d= -f2-)
+      base=$(basename "$file" .desktop)
+      no_display=$(grep -E '^NoDisplay=' "$file" | tail -n 1 | cut -d= -f2-)
+
+      if [[ -n $name && ! $no_display ]]; then
+        if [[ -n $generic_name ]]; then
+          display_name="$name ($generic_name)"
+        else
+          display_name="$name"
+        fi
+        # Truncate display name and escape pipes
+        safe_name="${display_name:0:33}"
+        safe_name="${safe_name//|/ }"
+        echo "$safe_name|$base" >> "$CACHE_FILE"
+      fi
+    done < <(find "$dir" -type f -name '*.desktop' -print0)
+  done
+}
+
+# Check if cache needs rebuild
+needs_rebuild=false
+if [[ ! -f $CACHE_FILE ]]; then
+  needs_rebuild=true
+else
+  cache_mtime=$(stat -c %Y "$CACHE_FILE")
+  for dir in "${desktop_dirs[@]}"; do
+    while IFS= read -r -d '' file; do
+      [[ $(stat -c %Y "$file") -gt $cache_mtime ]] && needs_rebuild=true && break 2
+    done < <(find "$dir" -type f -name '*.desktop' -print0)
+  done
+fi
+
+$needs_rebuild && rebuild_cache
+
+# Build map from cache
+declare -A app_map
+while IFS="|" read -r name base; do
+  app_map["$name"]="$base"
+done < "$CACHE_FILE"
+
+# dmenu selection
+selection=$(printf '%s\n' "${!app_map[@]}" | sort -u | dmenu)
+
+# Launch selected
+if [[ -n $selection ]]; then
+  gtk-launch "${app_map[$selection]}"
+fi
