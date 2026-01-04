@@ -7,9 +7,11 @@ static int min_width = 500;                    /* minimum width when centered */
 static const float menu_height_ratio = 4.0f;  /* This is the ratio used in the original calculation */
 
 /* -fn option overrides fonts[0]; default X11 font or font set */
-static char font[] = "monospace:size=10";
+static char font[] = "monospace:size=14";
+static char font2[] = "";
 static const char *fonts[] = {
-	font
+	font,
+    font2
 };
 
 static char *prompt      = NULL;      /* -p  option; prompt to the left of input field */
@@ -38,7 +40,7 @@ static const char worddelimiters[] = " ";
  */
 ResourcePref resources[] = {
 	{ "font",        STRING, &font },
-    { "fontalt0",    STRING, &fonts[1] },
+    { "fontalt0",    STRING, &font2 },
 	{ "normfgcolor", STRING, &normfgcolor },
 	{ "normbgcolor", STRING, &normbgcolor },
 	{ "selfgcolor",  STRING, &selfgcolor },
