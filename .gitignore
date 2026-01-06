@@ -5,3 +5,4 @@ stest
 *.o
 *.rej
 *.orig
+config.h
